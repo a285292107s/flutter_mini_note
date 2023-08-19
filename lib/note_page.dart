@@ -20,21 +20,23 @@ class _NotePageState extends State<NotePage> {
 
   final Future<SharedPreferences> _prefs = SharedPreferences.getInstance();
 
-  late Future _readFile;
-  String _filePath = "loading...";
-
-  late Future<File> _file;
+  FilePickerResult? _filePickerResult;
+  File? _file;
+  String? _filePath;
 
 //读取文档内容
   _loadFile() async {
     try {
-      //await Future.delayed(const Duration(seconds: 3));
-
-      File file = File(_filePath);
-      if (await file.exists()) {
-        var text = await file.readAsString();
+      //debugPrint("$_filePath");
+      if (_filePath == null) {
+        await getSingleFile();
+        _filePath = _filePickerResult!.files.single.path;
+        debugPrint("_filePickerResult.files.single.path");
+      }
+      _file = File(_filePath!);
+      if (await _file!.exists()) {
+        controller.text = await _file!.readAsString();
         debugPrint("file.readAsString");
-        return text;
       }
     } catch (e) {
       debugPrint(e.toString());
@@ -43,29 +45,31 @@ class _NotePageState extends State<NotePage> {
 
 //获取路径
   getSingleFile() async {
-    FilePickerResult? result = await FilePicker.platform.pickFiles(
+    _filePickerResult = await FilePicker.platform.pickFiles(
         lockParentWindow: true,
         type: FileType.custom,
         allowedExtensions: ['txt']);
-    return result!.files.single;
+    _filePath = _filePickerResult!.files.single.path;
+    var prefs = await _prefs;
+    prefs.setString("filePath", _filePath!);
+    debugPrint("${_filePickerResult!.files.single.path}");
   }
 
   @override
   void initState() {
     super.initState();
     () async {
+      //读取上次打开的文档
       var prefs = await _prefs;
-      PlatformFile temp = getSingleFile();
-      setState(() {
-        _filePath = prefs.getString("filePath") ?? temp.path!;
-      });
+      if (_filePath == null) {
+        await _loadFile();
+        _filePath = _filePickerResult!.files.single.path;
+        prefs.setString("filePath", _filePath!);
+      } else {
+        _filePath = prefs.getString("filePath");
+      }
+      setState(() {});
     };
-    _readFile = _loadFile();
-    _readFile.then((value) {
-      setState(() {
-        controller.text = value;
-      });
-    });
   }
 
   @override
@@ -82,36 +86,27 @@ class _NotePageState extends State<NotePage> {
         children: <Widget>[
           //const Text('标题'),
           Expanded(
-            child: FutureBuilder(
-                future: _readFile,
-                builder: (context, snapshot) {
-                  //controller.text = _readFile.toString();
-                  if (snapshot.hasData) {
-                    return TextField(
-                      maxLines: null,
-                      expands: true,
-                      focusNode: focusNode,
-                      controller: controller,
-                      decoration: const InputDecoration(
-                        border: InputBorder.none,
-                        focusedBorder: InputBorder.none,
-                        enabledBorder: InputBorder.none,
-                        contentPadding: EdgeInsets.fromLTRB(20, 12, 20, 12),
-                      ),
-                      onChanged: (text) {
-                        setState(() {});
-                      },
-                      onTap: () {
-                        debugPrint("隐藏按钮");
-                        setState(() => _visible = false);
-                      },
-                    );
-                  } else {
-                    return const Center(
-                      child: Text('loading...'),
-                    );
-                  }
-                }),
+            child: _file == null
+                ? const Text("loading……")
+                : TextField(
+                    maxLines: null,
+                    expands: true,
+                    focusNode: focusNode,
+                    controller: controller,
+                    decoration: const InputDecoration(
+                      border: InputBorder.none,
+                      focusedBorder: InputBorder.none,
+                      enabledBorder: InputBorder.none,
+                      contentPadding: EdgeInsets.fromLTRB(20, 12, 20, 12),
+                    ),
+                    onChanged: (text) {
+                      setState(() {});
+                    },
+                    onTap: () {
+                      debugPrint("隐藏按钮");
+                      setState(() => _visible = false);
+                    },
+                  ),
           ),
           MouseRegion(
             onEnter: (_) => setState(() => _visible = true),
@@ -119,7 +114,7 @@ class _NotePageState extends State<NotePage> {
             child: SizedBox(
               width: double.infinity,
               child: Center(
-                child: Text(_filePath),
+                child: Text(_filePath == null ? "loading" : _filePath!),
               ),
             ),
           )
@@ -138,7 +133,12 @@ class _NotePageState extends State<NotePage> {
                 const SizedBox(width: 10),
                 FloatingActionButton(
                   onPressed: () {
-                    _loadFile();
+                    debugPrint("保存");
+                    () async {
+                      debugPrint("保存2");
+                      await getSingleFile();
+                      _loadFile();
+                    }();
                   },
                   tooltip: "打开",
                   child: const Icon(Icons.file_open),
