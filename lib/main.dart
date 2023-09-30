@@ -9,7 +9,7 @@ void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   // 再确保windowManager完成初始化
   await windowManager.ensureInitialized();
-
+  //窗口属性配置
   WindowOptions windowOptions = const WindowOptions(
     size: Size(800, 600),
     center: true,
@@ -19,7 +19,7 @@ void main() async {
     windowButtonVisibility: false,
   );
 
-  //等待windows窗口准备完毕，显示并聚焦
+  //等待windows窗口准备完毕，显示窗口并聚焦
   windowManager.waitUntilReadyToShow(windowOptions, () async {
     await windowManager.show();
     await windowManager.focus();
@@ -40,6 +40,7 @@ class MyApp extends StatelessWidget {
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
         useMaterial3: true,
+        fontFamily: 'LXGWWenKai',
       ),
       home: const NotePage(),
       //home: const Placeholder(),

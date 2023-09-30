@@ -17,10 +17,10 @@ class _NotePageState extends State<NotePage> {
 
   bool _visible = false;
   FocusNode focusNode = FocusNode();
-
+  //读取本地储存的配置数据 SharedPreferences
   final Future<SharedPreferences> _prefs = SharedPreferences.getInstance();
 
-  late Future<bool> openTheLastDocument;
+  late Future<bool> isOpenDoc;
   String? path;
 
   //读取文档内容
@@ -28,8 +28,19 @@ class _NotePageState extends State<NotePage> {
     File file = File(path);
     if (await file.exists()) {
       controller.text = await file.readAsString();
-      debugPrint("file.readAsString");
+      debugPrint("file.readAsString=> $path");
     }
+    setState(() {});
+  }
+
+// 保存文档内容
+  _saveAsString(String path) async {
+    if (controller.text.isEmpty) {
+      return;
+    }
+    File file = File(path);
+    await file.writeAsString(controller.text);
+    debugPrint("file.writeAsString=> $path");
     setState(() {});
   }
 
@@ -42,37 +53,41 @@ class _NotePageState extends State<NotePage> {
 
     if (filePickerResult != null) {
       //及时写入本地存储
-      var prefs = await _prefs;
-      prefs.setString("filePath", filePickerResult.files.single.path!);
-      setState(() {
-        debugPrint("重绘，更新底部文字");
-        path = filePickerResult.files.single.path;
-      });
+      saveFilePath(filePickerResult.files.single.path!);
     }
 
     return filePickerResult;
   }
 
-  //读取上次打开的文档
-  Future<bool> _openTheLastDocument() async {
-    SharedPreferences prefs = await _prefs;
-    path = prefs.getString('filePath');
-    //path = null;
-    if (path == null) {
-      setState(() {
-        _visible = true;
-      });
-      return false;
-    } else {
-      _readAsString(path!);
-      return true;
-    }
+  //保存txt文档路径
+  saveFilePath(String path) async {
+    var prefs = await _prefs;
+    prefs.setString("filePath", path);
+    setState(() {
+      debugPrint("重绘，更新底部文字");
+      this.path = path;
+    });
   }
 
   @override
   void initState() {
     super.initState();
-    openTheLastDocument = _openTheLastDocument();
+
+    //读取上次打开的文档
+    isOpenDoc = () async {
+      SharedPreferences prefs = await _prefs;
+      path = prefs.getString('filePath');
+      //path = null;
+      if (path == null) {
+        setState(() {
+          _visible = true;
+        });
+        return false;
+      } else {
+        _readAsString(path!);
+        return true;
+      }
+    }();
   }
 
   @override
@@ -112,10 +127,10 @@ class _NotePageState extends State<NotePage> {
                       },
                     );
                   } else {
-                    return const Text("加载中……");
+                    return const Text("暂无打开文档……");
                   }
                 },
-                future: openTheLastDocument),
+                future: isOpenDoc),
           ),
           MouseRegion(
             onEnter: (_) => setState(() => _visible = true),
@@ -123,7 +138,7 @@ class _NotePageState extends State<NotePage> {
             child: SizedBox(
               width: double.infinity,
               child: Center(
-                child: path == null ? const Text("加载中……") : Text(path!),
+                child: path == null ? const Text("TXT文档路径：") : Text(path!),
               ),
             ),
           )
@@ -135,7 +150,14 @@ class _NotePageState extends State<NotePage> {
               mainAxisAlignment: MainAxisAlignment.end,
               children: [
                 FloatingActionButton(
-                  onPressed: () {},
+                  onPressed: () {
+                    debugPrint("新建");
+                    () async {
+                      path = null;
+                      controller.text = "";
+                      setState(() {});
+                    }();
+                  },
                   tooltip: "新建",
                   child: const Icon(Icons.note_add),
                 ),
@@ -144,7 +166,7 @@ class _NotePageState extends State<NotePage> {
                   onPressed: () {
                     debugPrint("打开");
                     () async {
-                      String? path = await pickTextFile()
+                      path = await pickTextFile()
                           .then((value) => value?.files.single.path);
                       _readAsString(path!);
                       setState(() {});
@@ -155,7 +177,15 @@ class _NotePageState extends State<NotePage> {
                 ),
                 const SizedBox(width: 10),
                 FloatingActionButton(
-                  onPressed: () {},
+                  onPressed: () {
+                    debugPrint("保存文档内容");
+                    () async {
+                      path == null
+                          ? debugPrint("没有文档路径")
+                          : _saveAsString(path as String);
+                      setState(() {});
+                    }();
+                  },
                   tooltip: "保存",
                   child: const Icon(Icons.save),
                 ),
