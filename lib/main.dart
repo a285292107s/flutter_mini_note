@@ -42,8 +42,31 @@ class MyApp extends StatelessWidget {
         useMaterial3: true,
         fontFamily: 'LXGWWenKai',
       ),
-      home: const NotePage(),
+      home: const Test(),
       //home: const Placeholder(),
+    );
+  }
+}
+
+class Test extends StatefulWidget {
+  const Test({super.key});
+
+  @override
+  State<Test> createState() => _TestState();
+}
+
+class _TestState extends State<Test> {
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Placeholder'),
+      ),
+      body: const Center(
+        child: TextField(
+          maxLines: null,
+        ),
+      ),
     );
   }
 }

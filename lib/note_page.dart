@@ -138,7 +138,15 @@ class _NotePageState extends State<NotePage> {
             child: SizedBox(
               width: double.infinity,
               child: Center(
-                child: path == null ? const Text("TXT文档路径：") : Text(path!),
+                child: path == null
+                    ? const Text(
+                        "TXT文档路径：",
+                        style: TextStyle(color: Colors.grey),
+                      )
+                    : Text(
+                        path!,
+                        style: const TextStyle(color: Colors.grey),
+                      ),
               ),
             ),
           )
