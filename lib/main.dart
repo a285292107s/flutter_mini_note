@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:window_manager/window_manager.dart';
 //import 'package:path_provider/path_provider.dart';
 
-import 'note_page.dart';
+//import 'note_page.dart';
 
 void main() async {
   // 因为异步了，所以要先确保flutter完成初始化
